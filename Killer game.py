@@ -5,8 +5,6 @@ names = []
 for t in range(n):
     names.append(input("enter name"))
 
-
-    
 numbers = [i for i in range(n)]
 random.shuffle(numbers)
 
@@ -26,7 +24,3 @@ while not done:
         print(' ')
     if a == "ok":
         done = True
-    
-
-
-

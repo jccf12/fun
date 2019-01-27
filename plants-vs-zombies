@@ -1,90 +1,124 @@
-lawn = [
-    '2       ',
-    '  S     ',
-    '21  S   ',
-    '13      ',
-    '2 3     '
-]
+lawn = ['1         ', 'SS        ', 'SSS       ', 'SSS       ', 'SS        ', '1         ']
 
-zombies = [[0, 4, 28], [1, 1, 6], [2, 0, 10], [2, 4, 15], [3, 2, 16], [3, 3, 13]]
-
+zombies = [[0, 2, 16], [1, 3, 19], [2, 0, 18], [4, 2, 21], [6, 3, 20], [7, 5, 17],
+           [8, 1, 21], [8, 2, 11], [9, 0, 10], [11, 4, 23], [12, 1, 15], [13, 3, 22]]
 # zombies
 
 
+def rearrenger(lst):
+    new = []
+    start = lst[0][0]
+    for i in range(start, -1, -1):
+        sublst = [elem[1] for elem in lst if elem[0] == i]
+        sublst.sort()
+        for el in sublst:
+            new.append([start, el])
+        start -= 1
+    return new
+
+
 def plants_and_zombies(lawn, zombies):
+    for zombi in zombies:
+        zombi[0] += 1
     loops = 0
     done = False
     while not done:
-        print(str(loops)+'.1.0')
-        print_field2(lawn, zombies)
 
         k = 0  # move number
         n = len(lawn)  # n = number of rows
         m = len(lawn[0])  # m = number of columns
 
-        # 1 horizontal shooting (no S shooters yet)
-        # 1.1
-        for row in range(n):
-            print('row: ', row)
-            zombsInRow = [z for z in zombies if z[1] == row and z[2] >= 0]
+        # 3.1 Zombies moving
+        for zombi in zombies:
+            zombi[0] -= 1
+        for t in range(n):
+            string = lawn[t]
+            c = 0
+            lastPindex = None
+            for ch in string:
+                if ch != ' ':
+                    lastPindex = c
+                c += 1
+            zombsInRow = [z for z in zombies if z[1] == t]
             zombsInRow.sort()
-            print('zombsInRow: ', zombsInRow)
+            # killing plants
+            if zombsInRow:
+                if m-1 + zombsInRow[0][0] == lastPindex:
+                    print('String: ', lawn[t])
+                    if lastPindex < m-1 and lastPindex > 0:
+                        lawn[t] = string[:lastPindex] + ' ' + string[lastPindex+1:]
+                    elif lastPindex == m-1:
+                        lawn[t] = string[:lastPindex] + ' '
+                    else:
+                        lawn[t] = ' '+string[lastPindex+1:]
+                    print('String: ', lawn[t])
+
+        print('\nMove ', loops)
+        print('Before Shooters Fire')
+        print_field(lawn, zombies)
+        print_field2(lawn, zombies)
+
+        # 1 horizontal shooting (numbered plants)
+
+        for row in range(n):
+            zombsInRow = [z for z in zombies if z[1] == row and z[2] > 0 and z[0] <= 0]
+            zombsInRow.sort()
             if zombsInRow:
                 shots = 0
                 for ch in lawn[row]:
                     if ch.isdigit():
                         shots += int(ch)
-                print('SHOTS: ', shots)
                 zvictim = 0
                 while shots > 0:
                     if zvictim > len(zombsInRow)-1:
                         shots = 0
                     else:
-                        print('zombsInRow[zvictim]= ', zombsInRow[zvictim])
-                        if shots > zombsInRow[zvictim][0]:
-                            shots -= zombsInRow[zvictim][0]
+                        if shots > zombsInRow[zvictim][2]:
+                            shots -= zombsInRow[zvictim][2]
                             zombsInRow[zvictim][2] = 0
                         else:
                             zombsInRow[zvictim][2] -= shots
                             shots = 0
-                        print('zombsInRow[zvictim]= ', zombsInRow[zvictim])
                     zvictim += 1
-        print('\n'+str(loops)+'.1.1')
-        print_field2(lawn, zombies)
+
         # 2 S-shooting
         Srow = 0
         Slist = []
         for string in lawn:
-            for y in range(len(string)):
+            for y in range(m):
                 if 'S' == string[y]:
                     Slist.append([y, Srow])
             Srow += 1
         Slist.sort()
         Slist.reverse()
+        Slist = rearrenger(Slist)
         for Sshooter in Slist:
-            print('Sshooter= ', Sshooter)
+            print('Sshooter: ', Sshooter)
+
             # 2.1 diagonal-up
             should_continue = True
-            j = Sshooter[0]
-            l = Sshooter[1]
+            j = Sshooter[0]  # y
+            l = Sshooter[1]  # Srow
             while should_continue:
-                print('column= ', j-m+1, 'l= ', l)
-                if j == m or l == 0:
+                if j == m-1 or l == 0:
                     should_continue = False
-                    print('here1')
+
                 else:
                     column = j-m+1
                     for zombi in zombies:
-                        if (zombi[0], zombi[1]) == (column+1, l-1):
-                            zombi[2] -= 1
-                            if zombi[2] == 0:
+                        if zombi[0] == column+1 and zombi[1] == l-1:
+                            if loops == 16:
+                                print('column: ', column+1)
+                                print('row: ', l-1)
+                                print('victim zombi: ', zombi)
+                            if zombi[2] > 0:
+                                zombi[2] -= 1
                                 should_continue = False
                     j += 1
                     l -= 1
-            print('\n'+str(loops)+'.2.1')
-            print_field2(lawn, zombies)
+
             # 2.2 S-horizontal
-            zombsInRow = [z for z in zombies if z[1] == row]
+            zombsInRow = [z for z in zombies if z[1] == Sshooter[1] and z[2] > 0 and z[0] <= 0]
             zombsInRow.sort()
             shots = 1
             zvictim = 0
@@ -93,83 +127,57 @@ def plants_and_zombies(lawn, zombies):
                     shots = 0
                 else:
                     if zombsInRow[zvictim][2] > 0:
-                        if shots > zombsInRow[zvictim][0]:
-                            shots -= zombsInRow[zvictim][0]
-                            zombsInRow[zvictim][0] = 0
-                            zvictim += 1
-                        else:
-                            zombsInRow[zvictim][0] -= shots
-                            shots = 0
+                        zombsInRow[zvictim][2] -= 1
+                        shots = 0
                     else:
                         zvictim += 1
-            print('\n'+str(loops)+'.2.2')
-            print_field2(lawn, zombies)
+
             # 2.3 diagonal-down
             should_continue = True
             j = Sshooter[0]
             l = Sshooter[1]
             while should_continue:
-                if j == m or l == n:
+                if j == m-1 or l == n-1:
                     should_continue = False
                 else:
                     column = j-m+1
                     for zombi in zombies:
-                        if (zombi[0], zombi[1]) == (column-1, l+1):
-                            zombi[2] -= 1
-                            if zombi[2] == 0:
+                        if zombi[0] == column+1 and zombi[1] == l+1:
+                            if zombi[2] > 0:
+                                zombi[2] -= 1
                                 should_continue = False
                     j += 1
                     l += 1
-            print('\n'+str(loops)+'.2.3')
-            print_field2(lawn, zombies)
 
         # 3 eliminate dead Zombies
-        z = len(zombies)
+        z = len(zombies)  # z starts in len(zombies)
+        w = 0
         for x in range(z):
-            if x < z:
-                if zombies[x][2] <= 0:
-                    del zombies[x]
-                    z -= 1
+            y = x-w
+            if zombies[y][2] == 0:
+                del zombies[y]
+                z -= 1  # z diminishes after deleting zombi
+                w += 1
+            elif zombies[y][2] < 0:
+                print('ERROR')
 
-        # 3.1 Zombies moving
-        for zombi in zombies:
-            zombi[0] -= 1
-        for t in range(len(lawn)):
-            string = lawn[t]
-            c = 0
-            lastPindex = -1
-            for ch in string:
-                if ch != ' ':
-                    lastPindex = c
-                c += 1
-            zombsInRow = [z for z in zombies if z[1] == t]
-            zombsInRow.sort()
-            if zombsInRow:
-                if m + zombsInRow[0][0] == lastPindex:
-                    if lastPindex < m and lastPindex > 0:
-                        lawn[t] = string[:lastPindex] + ' ' + string[lastPindex+1:]
-                    elif lastPindex == m:
-                        lawn[t] = string[:lastPindex] + ' '
-                    else:
-                        lawn[t] = ' '+string[lastPindex+1:]
-        print('\n'+str(loops)+'.3.1')
-        print_field2(lawn, zombies)
-        print('\n')
-        done = True
-        for string in lawn:
-            for ch in string:
-                if ch != ' ':
-                    done = False
+        print('\nAfter Shooters Fire')
+        print_field(lawn, zombies)
+        loops += 1
+
         for zombi in zombies:
             if zombi[0] == 1 - m:
                 done = True
+
         if len(zombies) == 0:
             done = True
-        loops += 1
-        print('\n\n')
+            loops = None
+
+    return loops
 
 
 def print_field(lawn, zombies):
+    print('Printer 1:')
     n = len(lawn)  # n = number of rows
     m = len(lawn[0])  # m = number of columns
     field = []
@@ -188,16 +196,18 @@ def print_field(lawn, zombies):
         field.append(fieldrow)
     for row in field:
         print(row)
+    print('\n')
 
 
 def print_field2(lawn, zombies):
-    # print('Lawn:')
-    # for row in lawn:
-        # print(row)
+    print('Printer 2:')
     print('Zombies:')
     print(zombies)
+    print('Plants:')
+    print(lawn)
+
 
 #print_field(lawn, zombies)
 
 
-plants_and_zombies(lawn, zombies)
+print(plants_and_zombies(lawn, zombies))
